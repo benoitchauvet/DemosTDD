@@ -27,5 +27,34 @@ class CourseTest {
         assertEquals(course.getEndTime(), expectedEndTime);
     }
 
+    @Test
+    public void setDuration_negativeDuration_Fails()
+    {
+        course.setStartTime(LocalTime.of(9,0));
+
+        assertThrows(IllegalArgumentException.class, () -> {
+            course.setDurationInMinutes(-1);
+        });
+    }
+
+    @Test
+    public void setDuration_zeroDuration_Fails()
+    {
+        course.setStartTime(LocalTime.of(9,0));
+
+        assertThrows(IllegalArgumentException.class, () -> {
+            course.setDurationInMinutes(0);
+        });
+    }
+
+    @Test
+    public void setDuration_LowerThanMinimumDuration_Fails()
+    {
+        course.setStartTime(LocalTime.of(9,0));
+
+        assertThrows(IllegalArgumentException.class, () -> {
+            course.setDurationInMinutes(Course.MINIMUM_DURATION_IN_MINUTES - 1);
+        });
+    }
 
 }

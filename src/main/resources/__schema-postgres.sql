@@ -1,0 +1,3 @@
+DROP TABLE IF EXISTS promo;
+CREATE TABLE promo(id serial PRIMARY KEY, name VARCHAR(255));
+

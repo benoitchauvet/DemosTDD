@@ -5,15 +5,12 @@ import fr.eql.courseplanner.entities.Promo;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.time.LocalTime;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 /*
 
 - cours entre 9h et 17h ----- OK
 - un cours à la fois pour une promo ----- OK
-- pause dej 1h
 
 */
 
@@ -53,7 +50,7 @@ class CourseSchedulerTest {
         assertTrue(scheduler.isOverlapping(y,x));
     }
 
-    @Test
+    @Test()
     public void overlapping_courseXFinishingBeforeCourseY_isFalse()
     {
         Course x = new Course();
@@ -112,82 +109,101 @@ class CourseSchedulerTest {
         assertTrue(scheduler.isOverlapping(x,y));
     }
 
-    @Test
-    public void addCourse_overlappingAnotherCourseForTheSamePromo_refused()
+    @Test()
+    public void addCourse_overlappingAnotherCourseForTheSamePromo_ThrowsException()
     {
         Course course1 = new Course();
         course1.setDurationInMinutes(DURATION_IN_MINUTES);
         course1.setStartTime(CourseScheduler.MINIMUM_START_TIME);
         course1.setPromo(promo);
 
-        if (scheduler.addCourse(course1))
-        {
-            assertFalse(scheduler.addCourse(course));
-        }
-        else
-        {
-            fail("course1 refused");
-        }
+        scheduler.addCourse(course1);
+
+        Exception exc = assertThrows(CourseScheduler.CourseNotCreatedException.class, () -> {
+            scheduler.addCourse(course);
+        });
+
+        String expectedMessage = CourseScheduler.OVERLAPPING_FOR_SAME_PROMO_ERROR_MESSAGE;
+
+        assertTrue(exc.getMessage().equals(expectedMessage));
+    }
+
+    @Test()
+    public void addCourse_overlappingAnotherCourseForAnotherPromo_Succeeds()
+    {
+        Promo anotherPromo = new Promo();
+        anotherPromo.setName("Another Promo");
+
+        Course course1 = new Course();
+        course1.setDurationInMinutes(DURATION_IN_MINUTES);
+        course1.setStartTime(CourseScheduler.MINIMUM_START_TIME);
+        course1.setPromo(anotherPromo);
+
+        scheduler.addCourse(course1);
+
+        assertAll(() -> {
+            scheduler.addCourse(course);
+        });
     }
 
     @Test
-    public void addCourse_startingBeforeMinimumStartTime_refused() {
+    public void addCourse_startingBeforeMinimumStartTime_ThrowsException() {
 
         course.setStartTime(CourseScheduler.MINIMUM_START_TIME.minusHours(1));
 
-        boolean result = scheduler.addCourse(course);
+        Exception exc = assertThrows(CourseScheduler.CourseNotCreatedException.class, () -> {
+            scheduler.addCourse(course);
+        });
 
-        assertFalse(result);
+        String expectedMessage = CourseScheduler.START_TIME_BEFORE_MINIMUM_ERROR_MESSAGE;
+
+        assertTrue(exc.getMessage().equals(expectedMessage));
     }
 
     @Test
-    public void addCourse_startingExactlyAtMinimumStartTime_accepted() {
+    public void addCourse_startingExactlyAtMinimumStartTime_succeeds() {
 
         course.setStartTime(CourseScheduler.MINIMUM_START_TIME);
 
-        boolean result = scheduler.addCourse(course);
-
-        assertTrue(result);
+        assertAll( () -> { scheduler.addCourse(course); });
     }
 
     @Test
-    public void addCourse_startingAfterMinimumStartTime_accepted() {
+    public void addCourse_startingAfterMinimumStartTime_succeeds() {
 
         course.setStartTime(CourseScheduler.MINIMUM_START_TIME.plusHours(1));
 
-        boolean result = scheduler.addCourse(course);
-
-        assertTrue(result);
+        assertAll( () -> { scheduler.addCourse(course); });
     }
 
     @Test
-    public void addCourse_finishingBeforeMaximumEndTime_accepted() {
+    public void addCourse_finishingBeforeMaximumEndTime_succeeds() {
 
         course.setStartTime(CourseScheduler.MAXIMUM_END_TIME.minusMinutes(DURATION_IN_MINUTES + 30));
 
-        boolean result = scheduler.addCourse(course);
-
-        assertTrue(result);
+        assertAll( () -> { scheduler.addCourse(course); });
     }
 
     @Test
-    public void addCourse_finishingExactlyAtMaximumEndTime_accepted() {
+    public void addCourse_finishingExactlyAtMaximumEndTime_succeeds() {
 
         course.setStartTime(CourseScheduler.MAXIMUM_END_TIME.minusMinutes(DURATION_IN_MINUTES));
 
-        boolean result = scheduler.addCourse(course);
-
-        assertTrue(result);
+        assertAll( () -> { scheduler.addCourse(course); });
     }
 
     @Test
-    public void addCourse_finishingAfterMaximumEndTime_refused() {
+    public void addCourse_finishingAfterMaximumEndTime_ThrowsException() {
 
         course.setStartTime(CourseScheduler.MAXIMUM_END_TIME.minusHours(1));
 
-        boolean result = scheduler.addCourse(course);
+        Exception exc = assertThrows(CourseScheduler.CourseNotCreatedException.class, () -> {
+            scheduler.addCourse(course);
+        });
 
-        assertFalse(result);
+        String expectedMessage = CourseScheduler.END_TIME_EXCEEDS_MAXIMUM_ERROR_MESSAGE;
+
+        assertTrue(exc.getMessage().equals(expectedMessage));
     }
 
 
