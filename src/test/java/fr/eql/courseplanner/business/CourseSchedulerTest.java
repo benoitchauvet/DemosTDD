@@ -1,11 +1,23 @@
-package fr.eql.courseplanner.schedule;
+package fr.eql.courseplanner.business;
 
+import fr.eql.courseplanner.business.CourseScheduler;
 import fr.eql.courseplanner.entities.Course;
 import fr.eql.courseplanner.entities.Promo;
+import fr.eql.courseplanner.services.ICourseService;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.springframework.test.context.junit4.SpringRunner;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.when;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /*
 
@@ -14,25 +26,39 @@ import static org.junit.jupiter.api.Assertions.*;
 
 */
 
+@RunWith(SpringRunner.class)
 class CourseSchedulerTest {
 
+    @InjectMocks
     private CourseScheduler scheduler;
+    
+    @Mock
+    ICourseService courseServiceMock;
+  
+    
     private Course course;
     private Promo promo;
 
     private final int DURATION_IN_MINUTES = 210;
-
+   
+   
     @BeforeEach
     public void setUp() {
-        scheduler = new CourseScheduler();
-
+      
+        MockitoAnnotations.initMocks(this);
+      
         promo = new Promo();
+        promo.setId(1l);
         promo.setName("AI108");
 
         course = new Course();
         course.setStartTime(CourseScheduler.MINIMUM_START_TIME);
         course.setDurationInMinutes(DURATION_IN_MINUTES);
         course.setPromo(promo);
+        
+        //when(courseServiceMock.findAllByPromo(Mockito.any(Long.class))).thenReturn(new ArrayList<Course>());
+        //doNothing().when(courseServiceMock).save(Mockito.any(Course.class));
+
     }
 
     @Test
@@ -109,16 +135,26 @@ class CourseSchedulerTest {
         assertTrue(scheduler.isOverlapping(x,y));
     }
 
+    private void addAnotherCourse(Promo p)
+    {
+      Course anotherCourse = new Course();
+      anotherCourse.setDurationInMinutes(DURATION_IN_MINUTES);
+      anotherCourse.setStartTime(CourseScheduler.MINIMUM_START_TIME);
+      anotherCourse.setPromo(p);
+      
+      scheduler.addCourse(anotherCourse);
+
+      List<Course> coursesData1 = new ArrayList<Course>();
+      coursesData1.add(anotherCourse);
+      
+      when(courseServiceMock.findAllByPromo(p.getId())).thenReturn(coursesData1);
+    }
+    
     @Test()
     public void addCourse_overlappingAnotherCourseForTheSamePromo_ThrowsException()
     {
-        Course course1 = new Course();
-        course1.setDurationInMinutes(DURATION_IN_MINUTES);
-        course1.setStartTime(CourseScheduler.MINIMUM_START_TIME);
-        course1.setPromo(promo);
-
-        scheduler.addCourse(course1);
-
+        addAnotherCourse(promo);
+        
         Exception exc = assertThrows(CourseScheduler.CourseNotCreatedException.class, () -> {
             scheduler.addCourse(course);
         });
@@ -132,15 +168,11 @@ class CourseSchedulerTest {
     public void addCourse_overlappingAnotherCourseForAnotherPromo_Succeeds()
     {
         Promo anotherPromo = new Promo();
-        anotherPromo.setName("Another Promo");
+        anotherPromo.setId(2l);
+        anotherPromo.setName("AI109");
 
-        Course course1 = new Course();
-        course1.setDurationInMinutes(DURATION_IN_MINUTES);
-        course1.setStartTime(CourseScheduler.MINIMUM_START_TIME);
-        course1.setPromo(anotherPromo);
-
-        scheduler.addCourse(course1);
-
+        addAnotherCourse(anotherPromo);        
+        
         assertAll(() -> {
             scheduler.addCourse(course);
         });

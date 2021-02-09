@@ -14,14 +14,14 @@ public class SchoolController {
 
     @Autowired
     private IPromoService promoService;
-
+    
     @GetMapping("/showPromos")
     public String findPromos(Model model){
 
         List<Promo> promos = promoService.findAll();
 
         model.addAttribute("promos", promos);
-
+        
         return  "showPromos";
 
     }
